@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Elohim</title>
+  <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Bebas+Neue&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --purple: #9b59b6;
+      --deep: #1a0a2e;
+      --neon: #d45df0;
+      --off-white: #f0eaff;
+    }
+
+    body {
+      background: var(--deep);
+      overflow: hidden;
+      width: 100vw;
+      height: 100dvh;
+      color: var(--off-white);
+    }
+
+    /* ── INTRO SCREEN ── */
+    #intro {
+      position: fixed;
+      inset: 0;
+      background: #0a0010;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      flex-direction: column;
+      gap: 12px;
+      transition: opacity 1.4s ease;
+    }
+
+    #intro.fade-out { opacity: 0; pointer-events: none; }
+
+    .intro-text {
+      font-family: 'Permanent Marker', cursive;
+      font-size: clamp(38px, 14vw, 90px);
+      color: #fff;
+      text-align: center;
+      line-height: 1.1;
+      padding: 0 20px;
+      animation: textFlicker 3s ease-in-out infinite;
+      text-shadow:
+        2px 2px 0 var(--neon),
+        -1px -1px 0 var(--purple),
+        0 0 30px rgba(212, 93, 240, 0.6),
+        0 0 80px rgba(212, 93, 240, 0.3);
+    }
+
+    @keyframes textFlicker {
+      0%, 94%, 100% { opacity: 1; }
+      95% { opacity: 0.85; }
+      96% { opacity: 1; }
+      97% { opacity: 0.7; }
+      98% { opacity: 1; }
+    }
+
+    .intro-sub {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(11px, 3.5vw, 18px);
+      letter-spacing: 6px;
+      color: var(--neon);
+      opacity: 0.7;
+    }
+
+    /* spray-paint drip effect */
+    .drip {
+      position: absolute;
+      bottom: 0;
+      width: 3px;
+      background: linear-gradient(to bottom, var(--neon), transparent);
+      animation: drip 1.2s ease-in forwards;
+      opacity: 0.6;
+    }
+
+    @keyframes drip {
+      0%   { height: 0; }
+      100% { height: 60px; }
+    }
+
+    /* ── MAZE / LABYRINTH WALL ── */
+    #maze-wall {
+      position: fixed;
+      inset: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      background: var(--deep);
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Maze grid — irregular block sizes create labyrinth feel */
+    .maze-grid {
+      display: grid;
+      width: 100%;
+      grid-template-columns: repeat(6, 1fr);
+      grid-auto-rows: calc(100vw / 6);
+      gap: 3px;
+      padding: 3px;
+      background: var(--deep);
+    }
+
+    /* Each cell can span varying cols/rows */
+    .cell { position: relative; overflow: hidden; background: #110020; }
+
+    /* labyrinth spans — creates the maze-path feel */
+    .cell.w2  { grid-column: span 2; }
+    .cell.w3  { grid-column: span 3; }
+    .cell.w4  { grid-column: span 4; }
+    .cell.w6  { grid-column: span 6; }
+    .cell.h2  { grid-row: span 2; }
+    .cell.h3  { grid-row: span 3; }
+
+    /* maze border accent */
+    .cell::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: 1px solid rgba(212, 93, 240, 0.18);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .cell iframe {
+      position: absolute;
+      top: -10%;
+      left: -10%;
+      width: 120%;
+      height: 120%;
+      border: none;
+      pointer-events: none;
+    }
+
+    /* cells without video — decorative maze walls */
+    .cell.wall {
+      background:
+        repeating-linear-gradient(
+          45deg,
+          rgba(212,93,240,0.03),
+          rgba(212,93,240,0.03) 2px,
+          transparent 2px,
+          transparent 12px
+        ),
+        linear-gradient(135deg, #0d0018, #1a0030);
+    }
+
+    .cell.wall::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(212,93,240,0.08) 0%, transparent 70%);
+    }
+
+    /* artist label tile */
+    .cell.label {
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .cell.label .name {
+      font-family: 'Permanent Marker', cursive;
+      font-size: clamp(20px, 6vw, 40px);
+      color: var(--neon);
+      text-shadow: 0 0 20px rgba(212,93,240,0.8);
+      text-align: center;
+    }
+
+    .cell.label .track {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(9px, 2.5vw, 14px);
+      letter-spacing: 3px;
+      color: rgba(212,93,240,0.5);
+      text-align: center;
+    }
+
+    /* global vignette */
+    #maze-wall::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 30%, rgba(10,0,22,0.6) 100%);
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* scrollbar */
+    #maze-wall::-webkit-scrollbar { width: 3px; }
+    #maze-wall::-webkit-scrollbar-track { background: #0a0010; }
+    #maze-wall::-webkit-scrollbar-thumb { background: var(--neon); }
+  </style>
+</head>
+<body>
+
+  <!-- INTRO -->
+  <div id="intro">
+    <div class="intro-text">I feel<br>weird</div>
+    <div class="intro-sub">Elohim</div>
+    <div id="drip-container"></div>
+  </div>
+
+  <!-- MAZE VIDEO WALL -->
+  <div id="maze-wall">
+    <div class="maze-grid" id="maze"></div>
+  </div>
+
+  <script>
+    /**
+     * UPDATE VIDEO IDs:
+     * Go to each Elohim music video on YouTube, copy the ID from the URL
+     * (the 11-char string after ?v=), and replace the values below.
+     * Find her channel at: https://www.youtube.com/@elohimofficial
+     */
+    const videos = [
+      { id: 'REPLACE_ME_1', title: 'I Feel Weird' },
+      { id: 'REPLACE_ME_2', title: 'Panic Attacks' },
+      { id: 'REPLACE_ME_3', title: 'BITTERSWEET' },
+      { id: 'REPLACE_ME_4', title: 'Braindead' },
+      { id: 'REPLACE_ME_5', title: 'Hallucinating' },
+      { id: 'REPLACE_ME_6', title: 'Love I Want' },
+      { id: 'REPLACE_ME_7', title: 'Bridge' },
+      { id: 'REPLACE_ME_8', title: 'Xanax' },
+    ];
+
+    function makeEmbed(id) {
+      return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&playsinline=1&modestbranding=1&rel=0`;
+    }
+
+    // Labyrinth layout blueprint
+    // Each entry: [colSpan, rowSpan, type]  type: 'video'|'wall'|'label'
+    const layout = [
+      ['w3', 'h2', 'video', 0],
+      ['w2', '', 'wall'],
+      ['', '', 'wall'],
+      ['', '', 'wall'],
+      ['w2', '', 'wall'],
+      ['w3', 'h2', 'video', 1],
+      ['', '', 'wall'],
+      ['w2', 'h2', 'video', 2],
+      ['', '', 'wall'],
+      ['w3', '', 'label'],
+      ['', '', 'wall'],
+      ['w2', '', 'wall'],
+      ['w4', 'h2', 'video', 3],
+      ['w2', 'h2', 'video', 4],
+      ['w2', 'h2', 'video', 5],
+      ['w3', '', 'wall'],
+      ['', '', 'wall'],
+      ['w4', 'h3', 'video', 6],
+      ['w2', '', 'wall'],
+      ['', '', 'wall'],
+      ['w3', '', 'wall'],
+      ['w2', 'h2', 'video', 7],
+      ['w3', '', 'wall'],
+      ['w4', '', 'wall'],
+    ];
+
+    const maze = document.getElementById('maze');
+
+    layout.forEach(([colClass, rowClass, type, vidIdx]) => {
+      const cell = document.createElement('div');
+      cell.className = ['cell', colClass, rowClass, type].filter(Boolean).join(' ');
+
+      if (type === 'video' && vidIdx !== undefined && videos[vidIdx]) {
+        const v = videos[vidIdx];
+        cell.innerHTML = `<iframe src="${makeEmbed(v.id)}" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+      } else if (type === 'label') {
+        cell.innerHTML = `<div class="name">Elohim</div><div class="track">feel everything</div>`;
+      }
+
+      maze.appendChild(cell);
+    });
+
+    // Animate drips on intro text
+    const drips = document.getElementById('drip-container');
+    [20, 45, 55, 75, 85].forEach((pct, i) => {
+      setTimeout(() => {
+        const d = document.createElement('div');
+        d.className = 'drip';
+        d.style.left = pct + '%';
+        d.style.animationDuration = (1 + Math.random()) + 's';
+        drips.appendChild(d);
+      }, i * 200);
+    });
+
+    // Transition: intro (3s) → fade out → show maze
+    setTimeout(() => {
+      document.getElementById('intro').classList.add('fade-out');
+    }, 3000);
+
+    setTimeout(() => {
+      document.getElementById('intro').style.display = 'none';
+    }, 4500);
+  </script>
+</body>
+</html>
